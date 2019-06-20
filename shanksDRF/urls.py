@@ -23,9 +23,11 @@ from rest_framework.documentation import include_docs_urls
 from rest_framework_jwt.views import obtain_jwt_token
 
 from users.views import UserViewSet
+from project.views import AppViewSet
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet, base_name="users")
+router.register(r'apps', AppViewSet, base_name="apps")
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
