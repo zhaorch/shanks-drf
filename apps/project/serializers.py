@@ -12,19 +12,21 @@ class UserNameSerializer(serializers.ModelSerializer):
         model = User
         fields = ("id","username")
 
+
 class App_ParamNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = App_Param
-        fields = ["name", "value", "desc", "is_visiable"]
+        fields = ["id","name", "value", "desc", "is_visiable"]
 
 
 class AppSerializer(serializers.ModelSerializer):
     user = UserNameSerializer()
-    params = serializers.SerializerMethodField()
+    params = serializers.SerializerMethodField(read_only=True)
 
     def get_params(self, obj):
-        all_params = App_Param.objects.filter(app_id = obj.id)
-        params_serializer = App_ParamNameSerializer(all_params, many=True, context={'request': self.context['request']})
+        all_params = App_Param.objects.filter(app_id=obj.id).select_related('app')
+        # params_serializer = App_ParamNameSerializer(all_params, many=True, context={'request': self.context['request']})
+        params_serializer = App_ParamNameSerializer(all_params, many=True)
         return params_serializer.data
 
     class Meta:

@@ -43,7 +43,8 @@ class CommonPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class AppViewSet(CacheResponseMixin, viewsets.ModelViewSet):
+# class AppViewSet(CacheResponseMixin, viewsets.ModelViewSet):
+class AppViewSet(viewsets.ModelViewSet):
     authentication_classes = (JSONWebTokenAuthentication, authentication.SessionAuthentication,)
     #permission_classes = (permissions.IsAuthenticatedOrReadOnly,CommonPermission)
     permission_classes = (permissions.IsAdminUser,)
@@ -55,3 +56,14 @@ class AppViewSet(CacheResponseMixin, viewsets.ModelViewSet):
     filter_class = AppFilter
     search_fields = ('name', 'name_exe')
     ordering_fields = ('name',)
+
+    # /users/{pk}/appInfo/
+    @detail_route(methods=['get'])
+    def appInfo(self, request, pk=None):
+        obj = self.get_object()
+        if obj:
+            serializer = AppSerializer(obj, many=False)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
+        else:
+            return Response("未找到", status=status.HTTP_400_BAD_REQUEST)
