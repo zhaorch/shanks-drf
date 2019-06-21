@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 
 from .models import App,App_Param
-from .serializers import AppSerializer
+from .serializers import AppSerializer,AppCreateSerializer
 from .filters import AppFilter
 
 # Create your views here.
@@ -57,6 +57,18 @@ class AppViewSet(viewsets.ModelViewSet):
     search_fields = ('name', 'name_exe')
     ordering_fields = ('name',)
 
+    def get_serializer_class(self):
+        if self.action == "create":
+            return AppCreateSerializer
+        return AppSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
     # /users/{pk}/appInfo/
     @detail_route(methods=['get'])
     def appInfo(self, request, pk=None):
@@ -67,3 +79,4 @@ class AppViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
         else:
             return Response("未找到", status=status.HTTP_400_BAD_REQUEST)
+
