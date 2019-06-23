@@ -40,18 +40,18 @@ class App_ParamCreateSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class AppCreateSerializer(serializers.ModelSerializer):
-    # params = App_ParamCreateSerializer(many=True)
+    params = App_ParamCreateSerializer(many=True)
     class Meta:
         model = App
         fields = "__all__"
 
-    # def create(self, validated_data):
-    #     user = validated_data["user"]
-    #     paramList = validated_data.pop("params")
-    #     instance = App.objects.create(**validated_data)
-    #     for param in paramList:
-    #         App_Param.objects.create(app=instance, **param)
-    #
-    #     return instance
+    def create(self, validated_data):
+        user = validated_data["user"]
+        paramList = validated_data.pop("params")
+        instance = App.objects.create(**validated_data)
+        for param in paramList:
+            App_Param.objects.create(app=instance, **param)
+
+        return instance
 
 

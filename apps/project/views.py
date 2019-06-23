@@ -62,7 +62,24 @@ class AppViewSet(viewsets.ModelViewSet):
             return AppCreateSerializer
         return AppSerializer
 
-    # /users/{pk}/appInfo/
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        obj = App.objects.get(id=serializer.instance.id)
+        serializer = AppSerializer(obj, many=False)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # headers = self.get_success_headers(serializer.data)
+        # return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+        # self.serializer_class = AppSerializer
+        # return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # headers = self.get_success_headers(serializer.data)
+        # return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    # /apps/{pk}/appInfo/
     @detail_route(methods=['get'])
     def appInfo(self, request, pk=None):
         obj = self.get_object()
