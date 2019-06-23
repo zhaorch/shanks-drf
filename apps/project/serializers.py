@@ -54,4 +54,22 @@ class AppCreateSerializer(serializers.ModelSerializer):
 
         return instance
 
+    def update(self, instance, validated_data):
+        from rest_framework.utils import model_meta
+        info = model_meta.get_field_info(instance)
+
+        for attr, value in validated_data.items():
+            if attr in info.relations and info.relations[attr].to_many:
+                field = getattr(instance, attr)
+                field.set(value)
+            else:
+                setattr(instance, attr, value)
+        instance.save()
+        App_Param.objects.filter(app_id=instance.id).delete()
+        paramList = validated_data.pop("params")
+        for param in paramList:
+            App_Param.objects.create(app=instance, **param)
+        return instance
+
+
 
