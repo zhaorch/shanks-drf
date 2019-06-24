@@ -19,6 +19,15 @@ from .filters import AppFilter
 User = get_user_model()
 
 
+class CommonPermission(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        a = request.resolver_match.url_name
+        return request.user.is_superuser == 1
+
+
 class CommonUserPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
@@ -46,8 +55,8 @@ class CommonPagination(PageNumberPagination):
 # class AppViewSet(CacheResponseMixin, viewsets.ModelViewSet):
 class AppViewSet(viewsets.ModelViewSet):
     authentication_classes = (JSONWebTokenAuthentication, authentication.SessionAuthentication,)
-    #permission_classes = (permissions.IsAuthenticatedOrReadOnly,CommonPermission)
-    permission_classes = (permissions.IsAdminUser,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,CommonPermission)
+    #permission_classes = (permissions.IsAdminUser,)
 
     queryset = App.objects.all().order_by('name', 'created_time').select_related('user')
     serializer_class = AppSerializer
