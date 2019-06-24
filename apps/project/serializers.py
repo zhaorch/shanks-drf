@@ -35,6 +35,8 @@ class AppSerializer(serializers.ModelSerializer):
 
 
 class App_ParamCreateSerializer(serializers.ModelSerializer):
+    isSet = serializers.BooleanField(write_only=True)
+    # isSet = serializers.BooleanField(read_only=True)
     class Meta:
         model = App_Param
         fields = "__all__"
@@ -50,6 +52,8 @@ class AppCreateSerializer(serializers.ModelSerializer):
         paramList = validated_data.pop("params")
         instance = App.objects.create(**validated_data)
         for param in paramList:
+            if "isSet" in param.keys():
+                isSet = param.pop("isSet")
             App_Param.objects.create(app=instance, **param)
 
         return instance
@@ -68,7 +72,12 @@ class AppCreateSerializer(serializers.ModelSerializer):
         App_Param.objects.filter(app_id=instance.id).delete()
         paramList = validated_data.pop("params")
         for param in paramList:
+            if "isSet" in param.keys():
+                isSet = param.pop("isSet")
+                if isSet:
+                    a=222
             App_Param.objects.create(app=instance, **param)
+
         return instance
 
 
