@@ -58,11 +58,39 @@ class AppViewSet(viewsets.ModelViewSet):
     ordering_fields = ('name',)
 
     def get_serializer_class(self):
-        if self.action == "create":
+        if self.action == "create" or self.action == "partial_update":
             return AppCreateSerializer
         return AppSerializer
 
-    # /users/{pk}/appInfo/
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        obj = App.objects.get(id=serializer.instance.id)
+        serializer = AppSerializer(obj, many=False)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # headers = self.get_success_headers(serializer.data)
+        # return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+        # self.serializer_class = AppSerializer
+        # return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # headers = self.get_success_headers(serializer.data)
+        # return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        obj = App.objects.get(id=serializer.instance.id)
+        serializer = AppSerializer(obj, many=False)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # /apps/{pk}/appInfo/
     @detail_route(methods=['get'])
     def appInfo(self, request, pk=None):
         obj = self.get_object()
