@@ -1,6 +1,7 @@
 import re
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.db import transaction
 
 from .models import App,App_Param
 
@@ -35,6 +36,7 @@ class AppSerializer(serializers.ModelSerializer):
 
 
 class App_ParamCreateSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(write_only=False,required=False)
     isSet = serializers.BooleanField(write_only=True)
     # isSet = serializers.BooleanField(read_only=True)
     class Meta:
@@ -58,10 +60,66 @@ class AppCreateSerializer(serializers.ModelSerializer):
 
         return instance
 
+    # @transaction.atomic
+    # def update(self, instance, validated_data):
+    #     from rest_framework.utils import model_meta
+    #     info = model_meta.get_field_info(instance)
+    #
+    #     for attr, value in validated_data.items():
+    #         if attr in info.relations and info.relations[attr].to_many:
+    #             field = getattr(instance, attr)
+    #             field.set(value)
+    #         else:
+    #             setattr(instance, attr, value)
+    #     instance.save()
+    #     App_Param.objects.filter(app_id=instance.id).delete()
+    #     paramList = validated_data.pop("params")
+    #     for param in paramList:
+    #         isSet = param.pop("isSet",false)
+    #         if isSet:
+    #             a=222
+    #         App_Param.objects.create(app=instance, **param)
+    #
+    #     return instance
+
+    # def update(self, instance, validated_data):
+    #     # Updates an exisitng Company with several services
+    #     instance.name = validated_data['name']
+    #     instance.address = validated_data['address']
+    #     instance.cost_per_patient = validated_data['cost_per_patient']
+    #     instance.renting_fee = validated_data['renting_fee']
+    #     services_data = validated_data['services']
+    #
+    #     for item in services_data:
+    #         updatedService = ServiceType(
+    #             serviceName=item['serviceName'],
+    #             servicePrice=item['servicePrice'],
+    #             id=item['id'],
+    #             company=instance)
+    #         updatedService.save()
+    #
+    #     return instance
+
+    @transaction.atomic
     def update(self, instance, validated_data):
+        if 'params' in validated_data:
+            answer_ids_new = []
+            answer_ids_pre = App_Param.objects.all().filter(app=instance).values_list('id', flat=True)
+            for param in validated_data.pop('params'):
+                isSet = param.pop("isSet",None)
+                id = param.pop("id",None)
+                param["app"]=instance
+                ans, _created = App_Param.objects.update_or_create(id=id, defaults={**param})
+                # if _created:
+                #     ans.app = instance
+                #     ans.save()
+                answer_ids_new.append(ans.id)
+
+            delete_ids = set(answer_ids_pre) - set(answer_ids_new)
+            App_Param.objects.filter(id__in=delete_ids).delete()
+
         from rest_framework.utils import model_meta
         info = model_meta.get_field_info(instance)
-
         for attr, value in validated_data.items():
             if attr in info.relations and info.relations[attr].to_many:
                 field = getattr(instance, attr)
@@ -69,16 +127,6 @@ class AppCreateSerializer(serializers.ModelSerializer):
             else:
                 setattr(instance, attr, value)
         instance.save()
-        App_Param.objects.filter(app_id=instance.id).delete()
-        paramList = validated_data.pop("params")
-        for param in paramList:
-            if "isSet" in param.keys():
-                isSet = param.pop("isSet")
-                if isSet:
-                    a=222
-            App_Param.objects.create(app=instance, **param)
-
         return instance
-
 
 
